@@ -1,4 +1,4 @@
-export type EstadoInscripcion = "ACTIVA" | "CANCELADA" | "FINALIZADA";
+export type EstadoInscripcion = "ACTIVA" | "RETIRADA" | "FINALIZADA";
 
 export interface EstudianteInscripcion {
   id: number;
@@ -30,5 +30,14 @@ export interface Inscripcion {
   estudiante: EstudianteInscripcion;
   curso: CursoInscripcion;
   calificaciones: Calificacion[];
-  promedio: number;
+  promedio: number | null;
+}
+
+export interface CrearInscripcionDTO {
+  cursoId: number;
+  estudianteId: number;
+}
+
+export interface ActualizarEstadoInscripcionDTO {
+  estado: EstadoInscripcion;
 }

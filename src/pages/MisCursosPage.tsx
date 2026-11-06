@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import BarraLateral from "../components/layout/BarraLateral";
 import BarraSuperior from "../components/layout/BarraSuperior";
 import { useApi } from "../hooks/useApi";
 import { inscripcionesService } from "../services/inscripciones";
 import { useAuthStore } from "../store/useAuthStore";
+import { mensajeError } from "../lib/errores";
+import type { EstadoInscripcion } from "../types/inscripcion";
 
 export default function MisCursosPage() {
   const usuario = useAuthStore((state) => state.usuario);
@@ -14,6 +17,31 @@ export default function MisCursosPage() {
     error,
     recargar,
   } = useApi(inscripcionesService.getTodas, []);
+
+  const [retirandoId, setRetirandoId] = useState<number | null>(null);
+  const [errorRetiro, setErrorRetiro] = useState<string | null>(null);
+
+  const retirarInscripcion = async (id: number) => {
+    const confirmar = window.confirm(
+      "¿Estás seguro de que deseas retirarte de este curso?",
+    );
+
+    if (!confirmar) return;
+
+    setRetirandoId(id);
+    setErrorRetiro(null);
+
+    try {
+      await inscripcionesService.actualizarEstado(id, "RETIRADA");
+      recargar();
+    } catch (error) {
+      setErrorRetiro(
+        mensajeError(error, "No fue posible retirarte del curso."),
+      );
+    } finally {
+      setRetirandoId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -29,7 +57,6 @@ export default function MisCursosPage() {
         />
 
         <main className="p-6 lg:p-8">
-          {/* Encabezado */}
           <section className="mb-8">
             <p className="text-sm font-medium text-marca-600">Mi aprendizaje</p>
 
@@ -42,7 +69,13 @@ export default function MisCursosPage() {
             </p>
           </section>
 
-          {/* Estado de carga */}
+          {errorRetiro && (
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {errorRetiro}
+            </div>
+          )}
+
+          {/* Cargando */}
           {cargando && (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3].map((item) => (
@@ -99,7 +132,7 @@ export default function MisCursosPage() {
               </div>
             )}
 
-          {/* Cursos */}
+          {/* Inscripciones */}
           {!cargando && !error && inscripciones && inscripciones.length > 0 && (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {inscripciones.map((inscripcion) => (
@@ -134,28 +167,34 @@ export default function MisCursosPage() {
                       <EstadoBadge estado={inscripcion.estado} />
                     </div>
 
+                    {/* Promedio */}
                     <div className="mt-5">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-slate-500">Promedio</span>
 
                         <span className="text-2xl font-bold text-slate-900">
-                          {inscripcion.promedio.toFixed(2)}
+                          {inscripcion.promedio !== null
+                            ? inscripcion.promedio.toFixed(2)
+                            : "Sin calificaciones"}
                         </span>
                       </div>
 
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-marca-600"
-                          style={{
-                            width: `${Math.min(
-                              Math.max(inscripcion.promedio, 0),
-                              100,
-                            )}%`,
-                          }}
-                        />
-                      </div>
+                      {inscripcion.promedio !== null && (
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-marca-600"
+                            style={{
+                              width: `${Math.min(
+                                Math.max(inscripcion.promedio, 0),
+                                100,
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
+                    {/* Fecha */}
                     <div className="mt-5 border-t border-slate-100 pt-4">
                       <p className="text-xs text-slate-400">Inscrito desde</p>
 
@@ -171,12 +210,26 @@ export default function MisCursosPage() {
                       </p>
                     </div>
 
+                    {/* Acciones */}
                     <Link
                       to={`/mis-cursos/${inscripcion.id}`}
                       className="mt-5 block rounded-lg bg-marca-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-marca-700"
                     >
                       Ver curso
                     </Link>
+
+                    {inscripcion.estado === "ACTIVA" && (
+                      <button
+                        type="button"
+                        disabled={retirandoId === inscripcion.id}
+                        onClick={() => retirarInscripcion(inscripcion.id)}
+                        className="mt-2 w-full rounded-lg border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {retirandoId === inscripcion.id
+                          ? "Procesando..."
+                          : "Retirarme del curso"}
+                      </button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -189,19 +242,19 @@ export default function MisCursosPage() {
 }
 
 interface EstadoBadgeProps {
-  estado: "ACTIVA" | "CANCELADA" | "FINALIZADA";
+  estado: EstadoInscripcion;
 }
 
 function EstadoBadge({ estado }: EstadoBadgeProps) {
-  const estilos = {
+  const estilos: Record<EstadoInscripcion, string> = {
     ACTIVA: "bg-green-100 text-green-700",
-    CANCELADA: "bg-red-100 text-red-700",
+    RETIRADA: "bg-red-100 text-red-700",
     FINALIZADA: "bg-slate-100 text-slate-700",
   };
 
-  const textos = {
+  const textos: Record<EstadoInscripcion, string> = {
     ACTIVA: "Activa",
-    CANCELADA: "Cancelada",
+    RETIRADA: "Retirada",
     FINALIZADA: "Finalizada",
   };
 

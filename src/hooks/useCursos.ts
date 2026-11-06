@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { useCursosStore } from "../store/useCursosStore";
 
 export function useCursos() {

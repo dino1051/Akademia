@@ -1,10 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
+import type { Rol } from "../../types/usuario";
 
 interface OpcionMenu {
   nombre: string;
   ruta: string;
   icono: string;
+  roles: Rol[];
 }
 
 const opcionesMenu: OpcionMenu[] = [
@@ -12,36 +14,61 @@ const opcionesMenu: OpcionMenu[] = [
     nombre: "Dashboard",
     ruta: "/dashboard",
     icono: "dashboard",
+    roles: ["ADMIN", "DOCENTE", "ESTUDIANTE"],
   },
   {
     nombre: "Mis cursos",
     ruta: "/mis-cursos",
     icono: "menu_book",
+    roles: ["ESTUDIANTE"],
+  },
+  {
+    nombre: "Explorar cursos",
+    ruta: "/cursos",
+    icono: "library_books",
+    roles: ["ADMIN", "ESTUDIANTE"],
   },
   {
     nombre: "Aula virtual",
     ruta: "/aula-virtual",
     icono: "school",
+    roles: ["DOCENTE", "ESTUDIANTE"],
   },
   {
     nombre: "Calificaciones",
     ruta: "/calificaciones",
     icono: "grade",
+    roles: ["DOCENTE", "ESTUDIANTE"],
   },
   {
     nombre: "Calendario",
     ruta: "/calendario",
     icono: "calendar_month",
+    roles: ["DOCENTE", "ESTUDIANTE"],
   },
   {
     nombre: "Certificados",
     ruta: "/certificados",
     icono: "workspace_premium",
+    roles: ["ESTUDIANTE"],
+  },
+  {
+    nombre: "Inscripciones",
+    ruta: "/inscripciones",
+    icono: "assignment",
+    roles: ["ADMIN"],
+  },
+  {
+    nombre: "Usuarios",
+    ruta: "/usuarios",
+    icono: "groups",
+    roles: ["ADMIN"],
   },
   {
     nombre: "Configuración",
     ruta: "/configuracion",
     icono: "settings",
+    roles: ["ADMIN", "DOCENTE", "ESTUDIANTE"],
   },
 ];
 
@@ -55,6 +82,10 @@ export default function BarraLateral() {
     cerrarSesion();
     navigate("/login", { replace: true });
   };
+
+  const opcionesVisibles = opcionesMenu.filter((opcion) =>
+    usuario ? opcion.roles.includes(usuario.rol) : false,
+  );
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
@@ -82,11 +113,11 @@ export default function BarraLateral() {
 
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-slate-800">
-              {usuario ? `${usuario.nombre} ${usuario.apellido}` : "Estudiante"}
+              {usuario ? `${usuario.nombre} ${usuario.apellido}` : "Usuario"}
             </p>
 
             <p className="text-xs capitalize text-slate-500">
-              {usuario?.rol?.toLowerCase() ?? "estudiante"}
+              {usuario?.rol?.toLowerCase() ?? "usuario"}
             </p>
           </div>
         </div>
@@ -99,10 +130,11 @@ export default function BarraLateral() {
         </p>
 
         <div className="space-y-1">
-          {opcionesMenu.map((opcion) => (
+          {opcionesVisibles.map((opcion) => (
             <NavLink
               key={opcion.ruta}
               to={opcion.ruta}
+              end
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive

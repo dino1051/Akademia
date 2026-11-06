@@ -215,19 +215,19 @@ export default function MisCursoDetallePage() {
 }
 
 interface EstadoBadgeProps {
-  estado: "ACTIVA" | "CANCELADA" | "FINALIZADA";
+  estado: "ACTIVA" | "RETIRADA" | "FINALIZADA";
 }
 
 function EstadoBadge({ estado }: EstadoBadgeProps) {
   const estilos = {
-    ACTIVA: "bg-green-100 text-green-800",
-    CANCELADA: "bg-red-100 text-red-800",
+    ACTIVA: "bg-green-100 text-green-700",
+    RETIRADA: "bg-red-100 text-red-700",
     FINALIZADA: "bg-slate-100 text-slate-700",
   };
 
   const textos = {
     ACTIVA: "Inscripción activa",
-    CANCELADA: "Inscripción cancelada",
+    RETIRADA: "Inscripción cancelada",
     FINALIZADA: "Curso finalizado",
   };
 
